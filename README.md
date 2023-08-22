@@ -61,7 +61,7 @@ You need to have installed the latest version of FlyWithLua for Xp11 or Xp12 .
 Just uncompress the content of the SimbriefHelperEnh_Full_Install.zip file in your Resources/plugins/FlyWithLua folder.
 
 #### Update (if already installed, use only this method)
-Just uncompress the content of the SimbriefHelperEnh_Update_only_2.x.zip file in your Resources/plugins/FlyWithLua folder.
+Just uncompress the content of the SimbriefHelperEnh_Update_only_2.x.zip file in your Resources/plugins/FlyWithLua/Scripts folder.
 
 #### Help?
 https://forums.x-plane.org/index.php?/forums/topic/201318-simbrief-helper-enh/
