@@ -47,6 +47,12 @@ local fetchMETARCLick = false
 local FovScriptName = "fov_keeper"
 local FovSettingsFile = SCRIPT_DIRECTORY .. FovScriptName .. "_" .. string.gsub(AIRCRAFT_FILENAME, ".acf", "") .. ".ini"
 
+local gitVersionCheckUrl = "http://inerrant-sixes.000webhostapp.com/checkversion.php?q=simbriefHelperEnh/contents/version.ini"
+local forumUrl = "https://forums.x-plane.org/index.php?/files/file/86783-simbrief-helper-enh/"
+local gitAcceptHeader = "application/vnd.github.raw"
+local gitVersionStatus = ""
+
+
 function logMsg_SBe(message)
     logMsg("Simbrief Helper: " .. message)
 end
@@ -203,15 +209,43 @@ function fetchMetar(airport)
     return handler.root.AVWX.raw[1]
 end
 
+function IsNewScriptVersion()
+    local body = {}
+
+    -- It would be nice to have a try-cath here
+   local webRespose, webStatus = http.request {
+        url = gitVersionCheckUrl,
+        headers = {
+          ["Accept"] = gitAcceptHeader
+        },
+        sink = ltn12.sink.table(body)
+    }
+   
+    webRespose = table.concat(body)
+    webRespose = webRespose:gsub("^%s*(.-)%s*$", "%1")
+    logMsg_SBe("GitHub response is " .. webRespose.. " " .. webStatus  )
+    if webStatus ~= 200 then
+        logMsg_SBe("GitHub is not responding, returning empty string to avoid misunderstandung")
+        return ""
+    end
+
+    if webRespose ~= vVersion then
+        return "A new version of SimBrief Help Enh is available " .. webRespose .." !\nCheck on "..forumUrl
+    end
+
+    return ""
+end
+
 function fetchOFPXMLData()
     -- do return end -- stop
     if sbUser == nil then
         logMsg_SBe("No simbrief username has been configured")
         return false
     end
-
+    local url = "http://www.simbrief.com/api/xml.fetcher.php?username=" .. sbUser
     -- It would be nice to have a try-cath here
-    local webRespose, webStatus = http.request("http://www.simbrief.com/api/xml.fetcher.php?username=" .. sbUser)
+    logMsg_SBe("Querying " .. url)
+    local webRespose, webStatus = http.request(url)
 
     if webStatus ~= 200 then
         logMsg_SBe("Simbrief API is not responding OK")
@@ -260,6 +294,7 @@ function readXML()
     DataOfp["Cpt"] = handler.root.OFP.crew.cpt
     DataOfp["Callsign"] = handler.root.OFP.atc.callsign
     DataOfp["Aircraft"] = handler.root.OFP.aircraft.name
+    DataOfp["AircraftICAO"] = handler.root.OFP.aircraft.icao_code
     DataOfp["Units"] = handler.root.OFP.params.units
     DataOfp["Distance"] = handler.root.OFP.general.route_distance
     DataOfp["Ete"] = handler.root.OFP.times.est_time_enroute
@@ -367,8 +402,10 @@ function fetchOFP()
     if fetchOFPXMLData() then
         readXML()
         if ground_speed < 5 then
-            if isZibo and upload2FMC then
+            if isZibo and upload2FMC and DataOfp["AircraftICAO"] == 'B738' then
                 uploadToZiboFMC()
+            else 
+                logMsg_SBe("Aircraft is not Zibo B738 or OPF is targeting ".. DataOfp["AircraftICAO"] .. " , FMC not updated")    
             end
         else
             logMsg_SBe("Aircraft not on the ground, FMC not updated")
@@ -379,6 +416,12 @@ end
 function displayOFP(DataOfp)
     imgui.TextUnformatted(DataOfp["Status"])
 
+    if gitVersionStatus ~= "" then
+        imgui.PushStyleColor(imgui.constant.Col.Text, 0xFF00BFFF)
+        imgui.TextUnformatted(gitVersionStatus)
+        imgui.PopStyleColor()
+    end
+    
     imgui.TextUnformatted("                                                  ")
     -- if OFP older than 2 hours
     if DataOfp["OfpAge"] > 2 * 60 * 60 then
@@ -571,7 +614,11 @@ function sb_show_wnd()
     readSettings() -- It should read only once
     sb_wnd = float_wnd_create(700, 700, 1, true)
     -- float_wnd_set_imgui_font(sb_wnd, 2)
-    float_wnd_set_title(sb_wnd, "Simbrief Helper Enh ( v" .. vVersion .. " )")
+    local newVersion = ""
+    if gitVersionStatus ~= "" then
+        newVersion = "Update available"
+    end    
+    float_wnd_set_title(sb_wnd, "Simbrief Helper Enh ( v" .. vVersion .. " ) " .. newVersion)
     float_wnd_set_imgui_builder(sb_wnd, "sb_on_build")
     float_wnd_set_onclose(sb_wnd, "sb_hide_wnd")
 end
@@ -601,6 +648,9 @@ function toggle_simbrief_helper_interface()
         end
     end
 end
+
+
+gitVersionStatus = IsNewScriptVersion()
 
 add_macro("Simbrief Helper Enh", "sb_show_wnd()", "sb_hide_wnd()", "deactivate")
 create_command("FlyWithLua/SimbriefHelper/show_toggle", "open/close Simbrief Helper Enh",
