@@ -36,6 +36,9 @@ avwxtoken=YOUR_AVWX_TOKEN
     Simbrief Helper Enh stores your own setting for each plane and
     recall it automatically at each new flight.
 
+5. Program the FMC automatically (Zibo B737 only)
+Once the OFP is retrieved, Simbrief Helper Enh will program the FMC automatically
+
 This plugin pulls your OFP and flight plan from your Simbrief and put it inside your Simulator as a nice floating window (very useful for VR).
 The idea is to get the most relevant data required for your flight plan to feed the FMC and prepare your aircraft (fuel and weighs)
 
@@ -54,8 +57,11 @@ You need to enter your Simbrief username and then press the button "Fetch data"
 #### Requirements
 You need to have installed the latest version of FlyWithLua for Xp11 or Xp12 .
 
-#### Installation
-Just uncompress the content in your Resources/plugins/FlyWithLua folder.
+#### Installation (First installation only)
+Just uncompress the content of the SimbriefHelperEnh_Full_Install.zip file in your Resources/plugins/FlyWithLua folder.
+
+#### Update (if already installed, use only this method)
+Just uncompress the content of the SimbriefHelperEnh_Update_only_2.x.zip file in your Resources/plugins/FlyWithLua folder.
 
 #### Help?
 https://forums.x-plane.org/index.php?/forums/topic/201318-simbrief-helper-enh/
