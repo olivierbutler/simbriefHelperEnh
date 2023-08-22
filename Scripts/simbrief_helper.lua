@@ -300,8 +300,8 @@ function readXML()
     DataOfp["Ete"] = handler.root.OFP.times.est_time_enroute
     DataOfp["Route"] = handler.root.OFP.general.route
     DataOfp["Level"] = handler.root.OFP.general.initial_altitude
-    DataOfp["RampFuel"] = (math.ceil(handler.root.OFP.fuel.plan_ramp / 100) * 100)
-    DataOfp["TripFuel"] = (math.ceil(handler.root.OFP.fuel.enroute_burn / 100) * 100)
+    DataOfp["RampFuel"] = (math.ceil(handler.root.OFP.fuel.plan_ramp / 100) * 100 + 100)
+    DataOfp["TripFuel"] = (math.ceil(handler.root.OFP.fuel.enroute_burn / 100) * 100 + 100)
     DataOfp["MinTakeoff"] = handler.root.OFP.fuel.min_takeoff
     DataOfp["ReserveFuel"] = handler.root.OFP.fuel.reserve
     DataOfp["AlternateFuel"] = handler.root.OFP.fuel.alternate_burn
@@ -389,6 +389,7 @@ function uploadToZiboFMC()
     pushKeyToBuffer("", DataOfp["FlightNumber"], "2R")
     pushKeyToBuffer("init_ref", "", "6L")
     pushKeyToBuffer("3L", "", "")
+    pushKeyToBuffer("", string.format("%1.1f", DataOfp["RampFuel"]/1000), "2L")
     pushKeyToBuffer("", string.format("%1.1f", DataOfp["Zfw"]), "3L")
     pushKeyToBuffer("", string.format("%1.1f", (DataOfp["ReserveFuel"] + DataOfp["AlternateFuel"]) / 1000), "4L")
     pushKeyToBuffer("", string.format("%1d", DataOfp["CostIndex"]), "5L")
