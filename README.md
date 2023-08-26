@@ -1,5 +1,5 @@
 # simbriefHelperEnh
-This Lua Script is an enhance version of the Simbrief Helper written by Alexander Garzon (https://forums.x-plane.org/index.php?/forums/topic/201318-simbrief-helper/) which upload Simbrief OFP to Zibo's B738 FMC
+This Lua Script upload Simbrief OFP to Zibo's B738 FMC
 
 ### what new ?
 1. the simbrief flight plan files ( .fms and .xml) are also
@@ -42,13 +42,6 @@ Once the OFP is retrieved, Simbrief Helper Enh will program the FMC automaticall
 This plugin pulls your OFP and flight plan from your Simbrief and put it inside your Simulator as a nice floating window (very useful for VR).
 The idea is to get the most relevant data required for your flight plan to feed the FMC and prepare your aircraft (fuel and weighs)
 
-You can do the same with Avitab and read the PDF? Yes ... but:
-
-You need to download the PDF and save it in a specific folder each time. While this plugin pulls the full data with just one click inside without leaving the simulator.
-The PDF is heavy and with tons of garbage and useless information.
-Also, I have plans to integrate a "load me" button to automatically load your aircraft with fuel and payload based on your flight plan.
-No everybody has Avitab, also Avitab does a lot more things! (which is nice) but because that consumes more resources (VR user’s needs resources as air to breath!)
-
 ### How it works?
 Using Simbrief API, this script pulls your flight plan and save it as an XML file that then is been parsed. All you need to provide is your Simbrief username.
 You can open it from the FlyWithLua macros menu. You can also assign a button or key to open it.
@@ -58,10 +51,24 @@ You need to enter your Simbrief username and then press the button "Fetch data"
 You need to have installed the latest version of FlyWithLua for Xp11 or Xp12 .
 
 #### Installation (First installation only)
-Just uncompress the content of the SimbriefHelperEnh_Full_Install.zip file in your Resources/plugins/FlyWithLua folder.
+Just uncompress the content of the SimbriefHelperEnh_Full_Install_2.x.zip file in your Resources/plugins/FlyWithLua folder.
 
 #### Update (if already installed, use only this method)
 Just uncompress the content of the SimbriefHelperEnh_Update_only_2.x.zip file in your Resources/plugins/FlyWithLua/Scripts folder.
 
 #### Help?
 https://forums.x-plane.org/index.php?/forums/topic/201318-simbrief-helper-enh/
+
+#### Modules
+Simbrief Helper Enh is provided with the following mandatory modules :
+1. LIP.lua https://github.com/Dynodzzo/Lua_INI_Parser
+2. xml2lua https://github.com/manoelcampos/xml2lua/releases
+
+#### Credits
+1. Original script by Alexander Garzon (https://forums.x-plane.org/index.php?/forums/topic/201318-simbrief-helper/)
+2. xml2lua module by Manoel Campos (https://github.com/manoelcampos/xml2lua)
+3. LIP module by Nicolas Carreras (https://github.com/Dynodzzo/Lua_INI_Parser)
+
+#### History
+- 2.2 Update modules to latest version of xml2Lua and improve logging
+- 2.1 Add automatic FMC programing

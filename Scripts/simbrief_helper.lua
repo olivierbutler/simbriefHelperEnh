@@ -6,8 +6,8 @@
 -- Manage, load and save The field of view angle per aircraft
 -- Zinbo B738 only : upload the OFP in the FMC
 -- Version:
-
-local vVersion = "2.1"
+local vVersion = "2.2"
+-- local vVersion = "2.1"
 -- local vVersion = "2.0"
 -- local vVersion = "1.8"
 -- local vVersion = "1.7"
@@ -22,7 +22,6 @@ local isZibo = (acf_tailnum == "ZB738")
 
 -- Modules
 local xml2lua = require("xml2lua")
-local handler = require("xmlhandler.tree")
 
 -- Variables
 local socket = require "socket"
@@ -35,7 +34,7 @@ local SimbriefXMLFile = "simbrief.xml"
 local FMSFolder = SYSTEM_DIRECTORY .. "Output" .. DIRECTORY_SEPARATOR .. "FMS plans" .. DIRECTORY_SEPARATOR
 local FMSFilesuffix = "01"
 local sbUser = ""
-local avwxToken = nil
+local avwxToken = ""
 local upload2FMC = false
 
 local DataOfp = nil
@@ -47,13 +46,16 @@ local fetchMETARCLick = false
 local FovScriptName = "fov_keeper"
 local FovSettingsFile = SCRIPT_DIRECTORY .. FovScriptName .. "_" .. string.gsub(AIRCRAFT_FILENAME, ".acf", "") .. ".ini"
 
-local gitVersionCheckUrl = "http://inerrant-sixes.000webhostapp.com/checkversion.php?q=simbriefHelperEnh/contents/version.ini"
+local gitVersionCheckUrl =
+    "http://inerrant-sixes.000webhostapp.com/checkversion.php?q=simbriefHelperEnh/contents/version.ini"
 local forumUrl = "https://forums.x-plane.org/index.php?/files/file/86783-simbrief-helper-enh/"
 local gitAcceptHeader = "application/vnd.github.raw"
 local gitVersionStatus = ""
 
-
 function logMsg_SBe(message)
+    if message == nil then
+        message = "NIL"
+    end
     logMsg("Simbrief Helper: " .. message)
 end
 
@@ -62,8 +64,7 @@ if not SUPPORTS_FLOATING_WINDOWS then
     logMsg_SBe("imgui not supported by your FlyWithLua version")
     return
 end
-
-
+logMsg_SBe("Starting v" .. vVersion)
 
 function format_thousand(v)
     local s = string.format("%6d", math.floor(v))
@@ -142,7 +143,7 @@ function loadFov()
     if f ~= nil then
         io.input(f)
         local newPov = tonumber(io.read())
-        logMsg_SBe( "new Pov read " .. newPov .. " from " .. FovSettingsFile)
+        logMsg_SBe("new Pov read " .. newPov .. " from " .. FovSettingsFile)
         planeFOV = newPov
         io.close(f)
     else
@@ -154,12 +155,20 @@ function saveFov()
     local f = io.open(FovSettingsFile, "w")
     io.output(f)
     io.write(tostring(planeFOV))
-    logMsg_SBe( "Pov written " .. tostring(planeFOV) .. " to " .. FovSettingsFile)
+    logMsg_SBe("Pov written " .. tostring(planeFOV) .. " to " .. FovSettingsFile)
     io.close(f)
 end
 
 function readSettings()
-    Settings = LIP.load(SCRIPT_DIRECTORY .. SettingsFile);
+    logMsg_SBe("readSettings")
+    local f = io.open(SCRIPT_DIRECTORY .. SettingsFile, "r")
+    if f == nil then
+        Settings['simbrief'] = {}
+    else
+        io.close(f)
+        Settings = LIP.load(SCRIPT_DIRECTORY .. SettingsFile);
+    end
+
     if Settings.simbrief.username ~= nil then
         sbUser = Settings.simbrief.username
     end
@@ -173,18 +182,21 @@ function readSettings()
 end
 
 function saveSettings(newSettings)
+    logMsg_SBe("saveSettings")
     LIP.save(SCRIPT_DIRECTORY .. SettingsFile, newSettings);
 end
 
 function fetchMetar(airport)
-    local body = {}
+    package.loaded["xmlhandler.tree"] = nil
+    local handler = require("xmlhandler.tree")
 
+    local body = {}
+    logMsg_SBe("fetchMetar")
     -- do return end -- stop
-    if avwxToken == nil then
-        logMsg_SBe("AVWX token has been configured")
+    if avwxToken == "" then
+        logMsg_SBe("fetchMetar AVWX token has been configured")
         return false
     end
-
     -- It would be nice to have a try-cath here
     local webRespose, webStatus = http.request {
         url = "https://avwx.rest/api/metar/" .. airport .. "?reporting=false&format=xml&filter=raw",
@@ -195,7 +207,6 @@ function fetchMetar(airport)
     }
 
     webRespose = table.concat(body)
-    --   http.request("https://avwx.rest/api/metar/"..airport.."?reporting=false&format=xml&filter=raw" )
 
     if webStatus ~= 200 then
         logMsg_SBe("AVWX API is not responding OK")
@@ -211,26 +222,25 @@ end
 
 function IsNewScriptVersion()
     local body = {}
-
     -- It would be nice to have a try-cath here
-   local webRespose, webStatus = http.request {
+    local webRespose, webStatus = http.request {
         url = gitVersionCheckUrl,
         headers = {
-          ["Accept"] = gitAcceptHeader
+            ["Accept"] = gitAcceptHeader
         },
         sink = ltn12.sink.table(body)
     }
-   
+
     webRespose = table.concat(body)
     webRespose = webRespose:gsub("^%s*(.-)%s*$", "%1")
-    logMsg_SBe("GitHub response is " .. webRespose.. " " .. webStatus  )
+    logMsg_SBe("IsNewScriptVersion GitHub response is " .. webRespose .. " " .. webStatus)
     if webStatus ~= 200 then
-        logMsg_SBe("GitHub is not responding, returning empty string to avoid misunderstandung")
+        logMsg_SBe("IsNewScriptVersion GitHub is not responding, returning empty string to avoid misunderstandung")
         return ""
     end
 
     if webRespose ~= vVersion then
-        return "A new version of SimBrief Help Enh is available " .. webRespose .." !\nCheck on "..forumUrl
+        return "A new version of SimBrief Help Enh is available " .. webRespose .. " !\nCheck on " .. forumUrl
     end
 
     return ""
@@ -238,8 +248,8 @@ end
 
 function fetchOFPXMLData()
     -- do return end -- stop
-    if sbUser == nil then
-        logMsg_SBe("No simbrief username has been configured")
+    if sbUser == nil or sbUser == "" then
+        logMsg_SBe("fetchOFPXMLData: No simbrief username has been configured")
         return false
     end
     local url = "http://www.simbrief.com/api/xml.fetcher.php?username=" .. sbUser
@@ -262,7 +272,10 @@ function fetchOFPXMLData()
 end
 
 function readXML()
+    logMsg_SBe("readXML")
     -- New XML parser
+    package.loaded["xmlhandler.tree"] = nil
+    local handler = require("xmlhandler.tree")
     local xfile = xml2lua.loadFile(SCRIPT_DIRECTORY .. SimbriefXMLFile)
     local parser = xml2lua.parser(handler)
     parser:parse(xfile)
@@ -328,7 +341,7 @@ function readXML()
 
     local OutputFilename = DataOfp["Origin"] .. DataOfp["Destination"]
 
-    if avwxToken ~= nil then
+    if avwxToken ~= "" then
         DataOfp["OrigMetar"] = fetchMetar(DataOfp["Origin"])
         DataOfp["DestMetar"] = fetchMetar(DataOfp["Destination"])
     end
@@ -383,13 +396,14 @@ function timeConvert(seconds, sep)
 end
 
 function uploadToZiboFMC()
+    logMsg_SBe("uploadToZiboFMC")
     lockFmcBuffer(true)
     pushKeyToBuffer("rte", DataOfp["Origin"] .. DataOfp["Destination"] .. FMSFilesuffix, "2L")
     pushKeyToBuffer("", DataOfp["OrigRwy"], "3L")
     pushKeyToBuffer("", DataOfp["FlightNumber"], "2R")
     pushKeyToBuffer("init_ref", "", "6L")
     pushKeyToBuffer("3L", "", "")
-    pushKeyToBuffer("", string.format("%1.1f", DataOfp["RampFuel"]/1000), "2L")
+    pushKeyToBuffer("", string.format("%1.1f", DataOfp["RampFuel"] / 1000), "2L")
     pushKeyToBuffer("", string.format("%1.1f", DataOfp["Zfw"]), "3L")
     pushKeyToBuffer("", string.format("%1.1f", (DataOfp["ReserveFuel"] + DataOfp["AlternateFuel"]) / 1000), "4L")
     pushKeyToBuffer("", string.format("%1d", DataOfp["CostIndex"]), "5L")
@@ -400,13 +414,15 @@ function uploadToZiboFMC()
 end
 
 function fetchOFP()
+    logMsg_SBe("fetchOFP")
     if fetchOFPXMLData() then
         readXML()
         if ground_speed < 5 then
             if isZibo and upload2FMC and DataOfp["AircraftICAO"] == 'B738' then
                 uploadToZiboFMC()
-            else 
-                logMsg_SBe("Aircraft is not Zibo B738 or OPF is targeting ".. DataOfp["AircraftICAO"] .. " , FMC not updated")    
+            else
+                logMsg_SBe("Aircraft is not Zibo B738 or OPF is targeting " .. DataOfp["AircraftICAO"] ..
+                               " , FMC not updated")
             end
         else
             logMsg_SBe("Aircraft not on the ground, FMC not updated")
@@ -422,7 +438,7 @@ function displayOFP(DataOfp)
         imgui.TextUnformatted(gitVersionStatus)
         imgui.PopStyleColor()
     end
-    
+
     imgui.TextUnformatted("                                                  ")
     -- if OFP older than 2 hours
     if DataOfp["OfpAge"] > 2 * 60 * 60 then
@@ -490,7 +506,7 @@ function displayOFP(DataOfp)
     imgui.PushStyleColor(imgui.constant.Col.Text, 0xFF00BFFF)
     imgui.TextUnformatted(string.format("%s", DataOfp["OrigMetar"]))
     imgui.TextUnformatted(string.format("%s", DataOfp["DestMetar"]))
-    if avwxToken == nil then
+    if avwxToken == "" then
         imgui.PushStyleColor(imgui.constant.Col.Text, 0xFF0000FF)
         imgui.TextUnformatted("(AVWX is not configured: updated METARs not available)")
         imgui.PopStyleColor()
@@ -526,7 +542,9 @@ function sb_on_build(sb_wnd, x, y)
         if changed then
             sbUser = userNew
             Settings.simbrief.username = userNew
-            saveSettings(Settings)
+            if Settings.simbrief.username ~= nil and Settings.simbrief.username ~= "" then
+                saveSettings(Settings)
+            end
         end
 
         local awxchanged, awxnew = imgui.InputText(
@@ -618,7 +636,7 @@ function sb_show_wnd()
     local newVersion = ""
     if gitVersionStatus ~= "" then
         newVersion = "Update available"
-    end    
+    end
     float_wnd_set_title(sb_wnd, "Simbrief Helper Enh ( v" .. vVersion .. " ) " .. newVersion)
     float_wnd_set_imgui_builder(sb_wnd, "sb_on_build")
     float_wnd_set_onclose(sb_wnd, "sb_hide_wnd")
@@ -649,7 +667,6 @@ function toggle_simbrief_helper_interface()
         end
     end
 end
-
 
 gitVersionStatus = IsNewScriptVersion()
 
