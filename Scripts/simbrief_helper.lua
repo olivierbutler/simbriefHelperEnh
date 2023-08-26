@@ -26,6 +26,7 @@ local xml2lua = require("xml2lua")
 -- Variables
 local socket = require "socket"
 local http = require "socket.http"
+http.TIMEOUT = 5
 local ltn12 = require "ltn12"
 local LIP = require("LIP");
 
