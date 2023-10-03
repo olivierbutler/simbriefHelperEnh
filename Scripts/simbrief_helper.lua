@@ -210,7 +210,7 @@ function fetchMetar(airport)
     webRespose = table.concat(body)
 
     if webStatus ~= 200 then
-        logMsg_SBe("AVWX API is not responding OK")
+        logMsg_SBe("AVWX API is not responding OK " .. webStatus .. " " .. webRespose )
         return false
     end
 
@@ -236,7 +236,7 @@ function IsNewScriptVersion()
     webRespose = webRespose:gsub("^%s*(.-)%s*$", "%1")
     logMsg_SBe("IsNewScriptVersion GitHub response is " .. webRespose .. " " .. webStatus)
     if webStatus ~= 200 then
-        logMsg_SBe("IsNewScriptVersion GitHub is not responding, returning empty string to avoid misunderstandung")
+        logMsg_SBe("IsNewScriptVersion GitHub is not responding, returning empty string to avoid misunderstandung "  .. webStatus .. " " .. webRespose )
         return ""
     end
 
@@ -259,7 +259,7 @@ function fetchOFPXMLData()
     local webRespose, webStatus = http.request(url)
 
     if webStatus ~= 200 then
-        logMsg_SBe("Simbrief API is not responding OK")
+        logMsg_SBe("Simbrief API is not responding OK " .. webStatus .. " " .. webRespose )
         return false
     end
 

@@ -1,3 +1,9 @@
+# End of this project
+This project has been migrate to YANSH https://github.com/olivierbutler/YANSH
+
+=================================================================================
+
+
 # simbriefHelperEnh
 This Lua Script upload Simbrief OFP to Zibo's B738 FMC
 
@@ -70,5 +76,6 @@ Simbrief Helper Enh is provided with the following mandatory modules :
 3. LIP module by Nicolas Carreras (https://github.com/Dynodzzo/Lua_INI_Parser)
 
 #### History
+- 3.2 This project has been migrate to YANSH https://github.com/olivierbutler/YANSH
 - 2.2 Update modules to latest version of xml2Lua and improve logging
 - 2.1 Add automatic FMC programing
